@@ -6,12 +6,14 @@ import com.ryan.membership.state.MembershipList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Date;
 
 public class Member {
 
     // Member and introducer info
     private String host;
     private int port;
+    private Date timestamp;
     private String introducerHost;
     private int introducerPort;
 
@@ -64,13 +66,18 @@ public class Member {
         if (joined) return;
 
         // Initialize self-identity
-        this.selfEntry = new MembershipEntry();
+        this.selfEntry = new MembershipEntry(host, port, timestamp);
 
-        // Get info of a running process from introducer
+        // TODO: Get info of a running process from introducer
 
-        // Get the membership list from that process
+        // TODO: Get the membership list from that process. If cannot, get
+        // another process from the introducer.
 
-        // TODO: ...
+        // TODO: Start a TCP listener thread
+
+        // TODO: Broadcast current join via TCP
+
+        // TODO: Start gossip protocol thread, communicating via UDP
 
         joined = true;
     }
