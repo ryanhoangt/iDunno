@@ -1,13 +1,32 @@
 package com.ryan.membership;
 
+import com.ryan.membership.state.MembershipEntry;
+import com.ryan.membership.state.MembershipList;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Member {
 
+    // Member and introducer info
+    private String host;
+    private int port;
+    private String introducerHost;
+    private int introducerPort;
+
+    // Membership list and self entry
+    private MembershipList membershipList;
+    private MembershipEntry selfEntry;
+
+    // Other
+    private boolean joined;
+
     public Member(String host, int port, String introducerHost, int introducerPort) {
-        // TODO:
+        this.host = host;
+        this.port = port;
+        this.introducerHost = introducerHost;
+        this.introducerPort = introducerPort;
     }
 
     // process command line inputs
@@ -38,6 +57,25 @@ public class Member {
                 System.err.println(ex.getMessage());
             }
         }
+    }
+
+    private void joinGroup() {
+        // Do nothing if already joined
+        if (joined) return;
+
+        // Initialize self-identity
+        this.selfEntry = new MembershipEntry();
+
+        // Get info of a running process from introducer
+
+        // Get the membership list from that process
+
+        // TODO: ...
+
+        joined = true;
+    }
+
+    private void leaveGroup() {
     }
 
 }

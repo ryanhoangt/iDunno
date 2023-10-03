@@ -1,5 +1,8 @@
 package com.ryan.membership;
 
+/**
+ * Introducer to facilitate node/machine joins
+ */
 public class Introducer {
 
     int port;
