@@ -3,9 +3,8 @@ package com.ryan.membership;
 import com.ryan.membership.state.MembershipEntry;
 import com.ryan.membership.state.MembershipList;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.Socket;
 import java.util.Date;
 
 public class Member {
@@ -31,7 +30,10 @@ public class Member {
         this.introducerPort = introducerPort;
     }
 
-    // process command line inputs
+    /**
+     * Process command line inputs
+     */
+
     public void start() {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
@@ -61,14 +63,16 @@ public class Member {
         }
     }
 
-    private void joinGroup() {
-        // Do nothing if already joined
+    private void joinGroup() throws IOException, ClassNotFoundException {
+        // do nothing if already joined
         if (joined) return;
 
-        // Initialize self-identity
+        // initialize self-identity
+        this.timestamp = new Date();
         this.selfEntry = new MembershipEntry(host, port, timestamp);
 
-        // TODO: Get info of a running process from introducer
+        // get info of a running process from introducer
+        MembershipEntry runningProcess = getRunningProcess();
 
         // TODO: Get the membership list from that process. If cannot, get
         // another process from the introducer.
@@ -82,7 +86,22 @@ public class Member {
         joined = true;
     }
 
+    private MembershipEntry getRunningProcess() throws IOException, ClassNotFoundException {
+        try (Socket introducerConn = new Socket(introducerHost, introducerPort);
+            ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream());
+            ObjectInputStream oin = new ObjectInputStream(introducerConn.getInputStream())) {
+
+            // send self entry to the introducer
+            oout.writeObject(selfEntry);
+            oout.flush();
+
+            return (MembershipEntry) oin.readObject();
+        }
+    }
+
     private void leaveGroup() {
+        // TODO:
+        throw new UnsupportedOperationException();
     }
 
 }

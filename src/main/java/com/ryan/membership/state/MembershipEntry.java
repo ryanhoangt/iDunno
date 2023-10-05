@@ -1,14 +1,13 @@
 package com.ryan.membership.state;
 
-import org.xml.sax.helpers.AttributesImpl;
-
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
 /**
  * Individual member details
  */
-public class MembershipEntry {
+public class MembershipEntry implements Serializable {
 
     private final String host;
     private final int port;
