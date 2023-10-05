@@ -34,7 +34,7 @@ public class Member {
      * Process command line inputs
      */
 
-    public void start() {
+    public void start() throws ClassNotFoundException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
             try {
