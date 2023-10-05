@@ -4,6 +4,8 @@ import com.ryan.membership.state.MembershipEntry;
 import com.ryan.membership.state.MembershipList;
 
 import java.io.*;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 
@@ -15,6 +17,14 @@ public class Member {
     private Date timestamp;
     private String introducerHost;
     private int introducerPort;
+
+    // Sockets
+    private ServerSocket tcpServer;
+    private DatagramSocket gossipServer;
+
+    // Threads
+    private Thread tcpListener;
+    private Thread gossipProtocolThread;
 
     // Membership list and self entry
     private MembershipList membershipList;
@@ -74,16 +84,34 @@ public class Member {
         // get info of a running process from introducer
         MembershipEntry runningProcess = getRunningProcess();
 
-        // TODO: Get the membership list from that process. If cannot, get
+        // get the membership list from that process. If cannot, get
         // another process from the introducer.
+        if (runningProcess == null) // first member in group
+            this.membershipList = new MembershipList(selfEntry);
+        else {
+            this.membershipList = requestMembershipList(runningProcess);
+            this.membershipList.addEntry(selfEntry); // add self entry to the list
+        }
 
-        // TODO: Start a TCP listener thread
+        // start a TCP listener thread
+        this.tcpServer = new ServerSocket(port);
+        this.tcpListener = new Thread(new TCPListener());
+        this.tcpListener.start();
 
         // TODO: Broadcast current join via TCP
 
-        // TODO: Start gossip protocol thread, communicating via UDP
+        // start gossip protocol thread, communicating via UDP
+        this.gossipServer = new DatagramSocket(port);
+        this.gossipProtocolThread = new Thread(new GossipProtocol());
+        this.gossipProtocolThread.start();
 
         joined = true;
+    }
+
+    // Fetch membership details from a member already in group
+    private MembershipList requestMembershipList(MembershipEntry runningProcess) {
+        // TODO:
+        throw new UnsupportedOperationException();
     }
 
     private MembershipEntry getRunningProcess() throws IOException, ClassNotFoundException {
@@ -104,4 +132,19 @@ public class Member {
         throw new UnsupportedOperationException();
     }
 
+    private static class TCPListener implements Runnable {
+        @Override
+        public void run() {
+            // TODO:
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class GossipProtocol implements Runnable {
+        @Override
+        public void run() {
+            // TODO:
+            throw new UnsupportedOperationException();
+        }
+    }
 }
