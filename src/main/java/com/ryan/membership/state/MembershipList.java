@@ -1,12 +1,13 @@
 package com.ryan.membership.state;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Group membership list.
  */
-public class MembershipList {
+public class MembershipList implements Iterable<MembershipEntry> {
 
     private List<MembershipEntry> membershipEntries;
 
@@ -17,5 +18,10 @@ public class MembershipList {
 
     public boolean addEntry(MembershipEntry newEntry) {
         return membershipEntries.add(newEntry);
+    }
+
+    @Override
+    public Iterator<MembershipEntry> iterator() {
+        return membershipEntries.iterator();
     }
 }

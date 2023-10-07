@@ -19,6 +19,18 @@ public class MembershipEntry implements Serializable {
         this.timestamp = timestamp;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

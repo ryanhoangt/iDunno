@@ -98,7 +98,8 @@ public class Member {
         this.tcpListener = new Thread(this::TCPListener);
         this.tcpListener.start();
 
-        // TODO: Broadcast current join via TCP
+        // broadcast current join via TCP
+        disseminateMessage(new Message(Message.Type.Join, selfEntry));
 
         // start gossip protocol thread, communicating via UDP
         this.gossipServer = new DatagramSocket(port);
@@ -106,6 +107,22 @@ public class Member {
         this.gossipProtocolThread.start();
 
         joined = true;
+    }
+
+    // Broadcast the message to all members via TCP
+    private void disseminateMessage(Message message) {
+        for (MembershipEntry member: this.membershipList) {
+            if (member.equals(selfEntry)) continue;
+
+            try (Socket introducerConn = new Socket(member.getHost(), member.getPort());
+                 ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream())) {
+
+                // send self entry to the introducer
+                oout.writeObject(message);
+                oout.flush();
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     // Fetch membership details from a member already in group
@@ -150,10 +167,18 @@ public class Member {
             ObjectOutputStream oout = new ObjectOutputStream(reqConn.getOutputStream());
             ObjectInputStream oin = new ObjectInputStream(reqConn.getInputStream());
 
-            // TODO: Read the message
+            // read the message
+            Message message = (Message) oin.readObject();
+            switch (message.getMessageType()) {
+                case Join:
+                    membershipList.addEntry(message.getSubject());
+                    break;
+
+                default:
+            }
 
             reqConn.close();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("Error processing TCP request: " + e.getMessage());
         }
     }
