@@ -24,4 +24,14 @@ public class MembershipList implements Iterable<MembershipEntry> {
     public Iterator<MembershipEntry> iterator() {
         return membershipEntries.iterator();
     }
+
+    public MembershipEntry getSuccessor() {
+        // TODO: get the successor member node in the list, ordered by timestamp joined
+        throw new UnsupportedOperationException();
+    }
+
+    public void remove(MembershipEntry toMember) {
+        // TODO: remove the entry from the membership list
+        throw new UnsupportedOperationException();
+    }
 }

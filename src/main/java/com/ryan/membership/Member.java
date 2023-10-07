@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.util.Date;
 
 public class Member {
+    private static final long PING_INTERVAL_MS = 1500;
+    private static final long PING_ACK_TIMEOUT_MS = 1000;
 
     // Member and introducer info
     private String host;
@@ -185,11 +187,21 @@ public class Member {
 
     // Sending pings and waiting for acks
     private void GossipProtocol() {
-        // start the ping receiver thread
-        new PingReceiver(gossipServer).start();
+        try {
+            // start the ping receiver thread
+            new PingReceiver(gossipServer).start();
 
-        // TODO: Send ping messages periodically
+            while (true) {
+                // get the successor member from membership list
+                MembershipEntry successor = membershipList.getSuccessor();
 
+                // send ping messages periodically
+                new PingSender(successor, PING_ACK_TIMEOUT_MS, this.membershipList).start();
+
+                Thread.sleep(PING_INTERVAL_MS);
+            }
+        } catch (InterruptedException e) {
+            System.out.println("Exit the gossip protocol thread: " + e.getMessage());
+        }
     }
-
 }
