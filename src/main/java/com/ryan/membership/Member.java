@@ -95,14 +95,14 @@ public class Member {
 
         // start a TCP listener thread
         this.tcpServer = new ServerSocket(port);
-        this.tcpListener = new Thread(new TCPListener());
+        this.tcpListener = new Thread(this::TCPListener);
         this.tcpListener.start();
 
         // TODO: Broadcast current join via TCP
 
         // start gossip protocol thread, communicating via UDP
         this.gossipServer = new DatagramSocket(port);
-        this.gossipProtocolThread = new Thread(new GossipProtocol());
+        this.gossipProtocolThread = new Thread(this::GossipProtocol);
         this.gossipProtocolThread.start();
 
         joined = true;
@@ -132,19 +132,39 @@ public class Member {
         throw new UnsupportedOperationException();
     }
 
-    private static class TCPListener implements Runnable {
-        @Override
-        public void run() {
-            // TODO:
-            throw new UnsupportedOperationException();
+    private void TCPListener() {
+        while (true) {
+            try {
+                Socket reqConn = tcpServer.accept();
+
+                // spawn a new thread to process the request
+                new Thread(() -> this.processTCPMessage(reqConn));
+            } catch (IOException e) {
+                // do nothing
+            }
         }
     }
 
-    private static class GossipProtocol implements Runnable {
-        @Override
-        public void run() {
-            // TODO:
-            throw new UnsupportedOperationException();
+    private void processTCPMessage(Socket reqConn) {
+        try {
+            ObjectOutputStream oout = new ObjectOutputStream(reqConn.getOutputStream());
+            ObjectInputStream oin = new ObjectInputStream(reqConn.getInputStream());
+
+            // TODO: Read the message
+
+            reqConn.close();
+        } catch (IOException e) {
+            System.err.println("Error processing TCP request: " + e.getMessage());
         }
     }
+
+    // Sending pings and waiting for acks
+    private void GossipProtocol() {
+        // start the ping receiver thread
+        new PingReceiver(gossipServer).start();
+
+        // TODO: Send ping messages periodically
+
+    }
+
 }
