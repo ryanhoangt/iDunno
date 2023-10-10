@@ -9,7 +9,9 @@ public class Message implements Serializable {
     public enum Type {
         Join,
         Ping,
-        Ack
+        Ack,
+        MembershipListRequest,
+        IntroducerProbeAlive
     }
 
     private Type messageType;

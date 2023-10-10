@@ -9,13 +9,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
 
 /**
- * Introducer to facilitate node/machine joins
+ * Introducer to facilitate node/machine joins. If the introducer fails,
+ * the already running group functions as normal, but without any new joins.
  */
 public class Introducer {
 
-    private List<MembershipEntry> recentJoins;
+    private Queue<MembershipEntry> recentJoins;
     private int port;
 
     public Introducer(int port) {
@@ -39,9 +42,28 @@ public class Introducer {
                     continue;
                 }
 
-                // TODO: Connect to a running process
+                // connect to a running process
+                MembershipEntry member = recentJoins.peek();
+                while (member != null) {
+                    try (Socket probConn = new Socket(member.getHost(), member.getPort());
+                         ObjectInputStream probOin = (ObjectInputStream) probConn.getInputStream();
+                         ObjectOutputStream probOout = (ObjectOutputStream) probConn.getOutputStream()) {
+                        Message probeAlive = new Message(Message.Type.IntroducerProbeAlive, null);
 
-                // TODO: Write the process info to the response
+                        probOout.writeObject(probeAlive);
+                        probOout.flush();
+
+                        break;
+                    } catch (Exception ex) {
+                        recentJoins.poll();
+                        member = recentJoins.peek();
+                    }
+                }
+//                assert Objects.nonNull(member);
+
+                // write the process info to the response
+                oout.writeObject(member);
+                oout.flush();
 
                 // add the new entry to recent join list & close the request
                 recentJoins.add(newEntry);

@@ -128,9 +128,16 @@ public class Member {
     }
 
     // Fetch membership details from a member already in group
-    private MembershipList requestMembershipList(MembershipEntry runningProcess) {
-        // TODO:
-        throw new UnsupportedOperationException();
+    private MembershipList requestMembershipList(MembershipEntry runningProcess) throws IOException, ClassNotFoundException {
+        try (Socket reqConn = new Socket(runningProcess.getHost(), runningProcess.getPort());
+             ObjectInputStream oin = (ObjectInputStream) reqConn.getInputStream();
+             ObjectOutputStream oout = (ObjectOutputStream) reqConn.getOutputStream()) {
+            Message message = new Message(Message.Type.MembershipListRequest, selfEntry);
+            oout.writeObject(message);
+            oout.flush();
+
+            return (MembershipList) oin.readObject();
+        }
     }
 
     private MembershipEntry getRunningProcess() throws IOException, ClassNotFoundException {
