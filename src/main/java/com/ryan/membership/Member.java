@@ -8,10 +8,18 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class Member {
+    // Protocol config
     private static final long PING_INTERVAL_MS = 1500;
     private static final long PING_ACK_TIMEOUT_MS = 1000;
+
+    // Logger
+    private static final Logger logger = Logger.getLogger("MemberLogger");
 
     // Member and introducer info
     private String host;
@@ -35,11 +43,17 @@ public class Member {
     // Other
     private boolean joined;
 
-    public Member(String host, int port, String introducerHost, int introducerPort) {
+    public Member(String host, int port, String introducerHost, int introducerPort) throws IOException {
         this.host = host;
         this.port = port;
         this.introducerHost = introducerHost;
         this.introducerPort = introducerPort;
+
+        // setup logger
+        Handler fh = new FileHandler("/var/log/iDunno/dev/membership/member.log");
+        fh.setFormatter(new SimpleFormatter());
+        logger.setUseParentHandlers(false);
+        logger.addHandler(fh);
     }
 
     /**
@@ -47,6 +61,7 @@ public class Member {
      */
 
     public void start() throws ClassNotFoundException {
+        logger.info("Member process started");
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
             try {
@@ -55,6 +70,7 @@ public class Member {
 
                 switch (command) {
                     case "join":
+                        logger.info("Member process received 'join' command");
                         joinGroup();
                         break;
                     case "leave":
@@ -88,31 +104,37 @@ public class Member {
         // initialize self-identity
         this.timestamp = new Date();
         this.selfEntry = new MembershipEntry(host, port, timestamp);
+        logger.info("Created new entry: " + selfEntry);
 
         // get info of a running process from introducer
         MembershipEntry runningProcess = getRunningProcess();
 
-        // get the membership list from that process. If cannot, get
-        // another process from the introducer.
-        if (runningProcess == null) // first member in group
+        // get the membership list from that process.
+        // TODO: If cannot, get another process from the introducer.
+        if (runningProcess == null) {
+            logger.info("First member of the group");
             this.membershipList = new MembershipList(selfEntry);
-        else {
+        } else {
             this.membershipList = requestMembershipList(runningProcess);
             this.membershipList.addEntry(selfEntry); // add self entry to the list
+            logger.info("Received membership list. Currently having: " + membershipList.size() + " member(s)");
         }
 
         // start a TCP listener thread
         this.tcpServer = new ServerSocket(port);
         this.tcpListener = new Thread(this::TCPListener);
         this.tcpListener.start();
+        logger.info("TCP listener started");
 
         // broadcast current join via TCP
         disseminateMessage(new Message(Message.Type.Join, selfEntry));
+        logger.info("Broadcasted messages - Joined the group");
 
         // start gossip protocol thread, communicating via UDP
         this.gossipServer = new DatagramSocket(port);
         this.gossipProtocolThread = new Thread(this::GossipProtocol);
         this.gossipProtocolThread.start();
+        logger.info("Gossip protocol started");
 
         joined = true;
     }
@@ -128,6 +150,7 @@ public class Member {
                 // send self entry to the introducer
                 oout.writeObject(message);
                 oout.flush();
+                logger.info("Disseminated " + message.getMessageType().toString() + " message");
             } catch (IOException ignored) {
             }
         }
@@ -141,6 +164,7 @@ public class Member {
             Message message = new Message(Message.Type.MembershipListRequest, selfEntry);
             oout.writeObject(message);
             oout.flush();
+            logger.info("Sent membership list request to: " + runningProcess);
 
             return (MembershipList) oin.readObject();
         }
@@ -150,12 +174,16 @@ public class Member {
         try (Socket introducerConn = new Socket(introducerHost, introducerPort);
             ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream());
             ObjectInputStream oin = new ObjectInputStream(introducerConn.getInputStream())) {
+            logger.info("Connected to introducer: " + introducerConn);
 
             // send self entry to the introducer
             oout.writeObject(selfEntry);
             oout.flush();
+            logger.info("Sent message to introducer");
 
             return (MembershipEntry) oin.readObject();
+        } finally {
+            logger.info("Connection to introducer closed");
         }
     }
 
@@ -168,6 +196,7 @@ public class Member {
         while (true) {
             try {
                 Socket reqConn = tcpServer.accept();
+                logger.info("TCP connection established from: " + reqConn.toString());
 
                 // spawn a new thread to process the request
                 new Thread(() -> this.processTCPMessage(reqConn));
@@ -186,14 +215,19 @@ public class Member {
             Message message = (Message) oin.readObject();
             switch (message.getMessageType()) {
                 case Join:
+                    logger.info("Received message for process joining group: " + message.getSubject());
                     membershipList.addEntry(message.getSubject());
+                    logger.info("Process added to membership list: " + message.getSubject());
                     break;
                 // TODO: handle other types of message
                 case MembershipListRequest:
+                    logger.info("Received request for membership list from: " + message.getSubject());
                     oout.writeObject(this.membershipList);
                     oout.flush();
+                    logger.info("Response membership list back");
                     break;
                 case IntroducerProbeAlive:
+                    logger.info("Received introducer alive probing message from: " + message.getSubject());
                     // do nothing
                 default:
                     break;
@@ -210,6 +244,7 @@ public class Member {
         try {
             // start the ping receiver thread
             new PingReceiver(gossipServer).start();
+            logger.info("UDP Socket opened");
 
             while (true) {
                 // get the successor member from membership list
@@ -222,6 +257,9 @@ public class Member {
             }
         } catch (InterruptedException e) {
             System.out.println("Exit the gossip protocol thread: " + e.getMessage());
+        } finally {
+            gossipServer.close();
+            logger.info("UDP Socket closed");
         }
     }
 }

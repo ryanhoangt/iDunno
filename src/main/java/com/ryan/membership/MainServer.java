@@ -1,11 +1,12 @@
 package com.ryan.membership;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class MainServer {
 
-    public static void main(String[] args) throws UnknownHostException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         if (args.length < 1)
             throw new IllegalArgumentException("Not enough arguments");
 

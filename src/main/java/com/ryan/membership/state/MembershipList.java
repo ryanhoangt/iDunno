@@ -34,4 +34,8 @@ public class MembershipList implements Iterable<MembershipEntry> {
         // TODO: remove the entry from the membership list
         throw new UnsupportedOperationException();
     }
+
+    public int size() {
+        return this.membershipEntries.size();
+    }
 }
