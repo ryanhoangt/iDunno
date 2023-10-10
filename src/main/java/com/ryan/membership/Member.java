@@ -61,10 +61,16 @@ public class Member {
                         leaveGroup();
                         break;
                     case "list_mem":
-                        // TODO:
+                        if (joined)
+                            System.out.println(membershipList);
+                        else
+                            System.out.println("Not joined.");
                         break;
                     case "list_self":
-                        // TODO:
+                        if (joined)
+                            System.out.println(selfEntry);
+                        else
+                            System.out.println("Not joined.");
                         break;
                     default:
                         System.out.println("Unrecognized command, type 'join', 'leave', 'list_mem', or 'list_self'");
