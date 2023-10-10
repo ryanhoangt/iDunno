@@ -182,8 +182,15 @@ public class Member {
                 case Join:
                     membershipList.addEntry(message.getSubject());
                     break;
-
+                // TODO: handle other types of message
+                case MembershipListRequest:
+                    oout.writeObject(this.membershipList);
+                    oout.flush();
+                    break;
+                case IntroducerProbeAlive:
+                    // do nothing
                 default:
+                    break;
             }
 
             reqConn.close();

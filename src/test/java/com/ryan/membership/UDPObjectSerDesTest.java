@@ -15,12 +15,12 @@ public class UDPObjectSerDesTest {
                 new MembershipEntry("localhost", 2999, new Date()));
 
         // serialize
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
-        oOut.writeObject(message);
-        oOut.close();
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectOutputStream oout = new ObjectOutputStream(bout);
+        oout.writeObject(message);
+        oout.close();
 
-        byte[] serializedMsg = bOut.toByteArray();
+        byte[] serializedMsg = bout.toByteArray();
 
         // deserialize
         ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(serializedMsg));
