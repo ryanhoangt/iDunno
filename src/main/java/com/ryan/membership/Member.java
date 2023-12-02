@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
@@ -16,7 +17,7 @@ import java.util.logging.SimpleFormatter;
 public class Member {
     // Protocol config
     private static final long PING_INTERVAL_MS = 1500;
-    private static final long PING_ACK_TIMEOUT_MS = 1000;
+    public static final long PING_ACK_TIMEOUT_MS = 1000;
 
     // Logger
     private static final Logger logger = Logger.getLogger("MemberLogger");
@@ -74,7 +75,7 @@ public class Member {
                         joinGroup();
                         break;
                     case "leave":
-                        leaveGroup();
+                        leaveGroup(true);
                         break;
                     case "list_mem":
                         if (joined)
@@ -93,6 +94,35 @@ public class Member {
                 }
             } catch (IOException ex) {
                 System.err.println(ex.getMessage());
+            }
+        }
+    }
+
+    public MembershipEntry getSelfEntry() {
+        return selfEntry;
+    }
+
+    public MembershipList getMembershipList() {
+        return membershipList;
+    }
+
+    public DatagramSocket getGossipServer() {
+        return gossipServer;
+    }
+
+    // Broadcast the message to all members via TCP
+    public void disseminateMessage(Message message) {
+        for (MembershipEntry member: this.membershipList) {
+            if (member.equals(selfEntry)) continue;
+
+            try (Socket introducerConn = new Socket(member.getHost(), member.getPort());
+                 ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream())) {
+
+                // send self entry to the introducer
+                oout.writeObject(message);
+                oout.flush();
+                logger.info("Disseminated " + message.getMessageType().toString() + " message");
+            } catch (IOException ignored) {
             }
         }
     }
@@ -139,23 +169,6 @@ public class Member {
         joined = true;
     }
 
-    // Broadcast the message to all members via TCP
-    private void disseminateMessage(Message message) {
-        for (MembershipEntry member: this.membershipList) {
-            if (member.equals(selfEntry)) continue;
-
-            try (Socket introducerConn = new Socket(member.getHost(), member.getPort());
-                 ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream())) {
-
-                // send self entry to the introducer
-                oout.writeObject(message);
-                oout.flush();
-                logger.info("Disseminated " + message.getMessageType().toString() + " message");
-            } catch (IOException ignored) {
-            }
-        }
-    }
-
     // Fetch membership details from a member already in group
     private MembershipList requestMembershipList(MembershipEntry runningProcess) throws IOException, ClassNotFoundException {
         try (Socket reqConn = new Socket(runningProcess.getHost(), runningProcess.getPort());
@@ -187,14 +200,16 @@ public class Member {
         }
     }
 
-    private void leaveGroup() {
+    private void leaveGroup(boolean notifyOthers) {
         // do nothing if not joined
         if (!joined) return;
 
         logger.info("Leave command received");
 
-        disseminateMessage(new Message(Message.Type.Leave, selfEntry));
-        logger.info("Leave message disseminated");
+        if (notifyOthers) {
+            disseminateMessage(new Message(Message.Type.Leave, selfEntry));
+            logger.info("Leave message disseminated");
+        }
 
         // TODO: close resources
     }
@@ -226,9 +241,22 @@ public class Member {
                     membershipList.addEntry(message.getSubject());
                     logger.info("Process added to membership list: " + message.getSubject());
                     break;
-                // TODO: handle other types of message
                 case Leave:
                     logger.info("Received message for process leaving group: " + message.getSubject());
+                    membershipList.remove(message.getSubject());
+                    logger.info("Process removed from membership list: " + message.getSubject());
+                    break;
+                case Crash:
+                    logger.info("Received message for process failure: " + message.getSubject());
+                    if (selfEntry.equals(message.getSubject())) {
+                        // false crash of this node detected
+                        System.out.println("False positive crash of this node detected. Stopping execution");
+                        logger.warning("False positive crash of this node detected. Stopping execution");
+
+                        // leave group silently without notifying others
+                        leaveGroup(false);
+                        break;
+                    }
                     membershipList.remove(message.getSubject());
                     logger.info("Process removed from membership list: " + message.getSubject());
                     break;
@@ -254,16 +282,22 @@ public class Member {
     // Sending pings and waiting for acks
     private void GossipProtocol() {
         try {
+            AtomicBoolean ackSignal = new AtomicBoolean(); // monitoring 1 member
             // start the ping receiver thread
-            new PingReceiver(gossipServer, selfEntry).start();
+            PingReceiver receiver = new PingReceiver(this, ackSignal);
+            receiver.start();
             logger.info("UDP Socket opened");
 
             while (true) {
                 // get the successor member from membership list
-                MembershipEntry successor = membershipList.getSuccessor();
+                MembershipEntry successor;
+                synchronized (membershipList) {
+                    successor = membershipList.getSuccessor();
+                }
+                receiver.updateAcker(successor);
 
                 // send ping messages periodically
-                new PingSender(successor, PING_ACK_TIMEOUT_MS, this.membershipList).start();
+                new PingSender(this, successor, ackSignal).start();
 
                 Thread.sleep(PING_INTERVAL_MS);
             }

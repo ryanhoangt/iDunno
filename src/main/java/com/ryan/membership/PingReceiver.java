@@ -4,20 +4,25 @@ import com.ryan.membership.state.MembershipEntry;
 
 import java.io.*;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Thread to receive Ping/Ack and send Ack if needed
  */
 public class PingReceiver extends Thread {
+    private final Member curMember;
+    private final AtomicBoolean ackSignal;
+    private MembershipEntry acker;; // can be changed over time as the membership list changes
 
-    private DatagramSocket udpServer;
-    private MembershipEntry selfEntry;
+    public PingReceiver(Member curMember, AtomicBoolean ackSignal) {
+        this.curMember = curMember;
+        this.ackSignal = ackSignal;
+    }
 
-    public PingReceiver(DatagramSocket udpServer, MembershipEntry selfEntry) {
-        this.udpServer = udpServer;
-        this.selfEntry = selfEntry;
+    public void updateAcker(MembershipEntry newAcker) {
+        synchronized (acker) {
+            this.acker = newAcker;
+        }
     }
 
     @Override
@@ -26,7 +31,7 @@ public class PingReceiver extends Thread {
             try {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                udpServer.receive(packet);
+                curMember.getGossipServer().receive(packet);
 
                 // deserialize and process the packet
                 Message message = fromDatagramPacketToMessage(packet);
@@ -45,15 +50,19 @@ public class PingReceiver extends Thread {
                 ack(message.getSubject());
                 break;
             case Ack:
-                // TODO: Update states to notify the gossip sending thread that the member is still up
+                synchronized (ackSignal) {
+                    ackSignal.set(true);
+                    ackSignal.notify();
+                }
+                break;
             default:
                 break;
         }
     }
 
     private void ack(MembershipEntry member) {
-        Message message = new Message(Message.Type.Ack, selfEntry);
-        sendMessage(message, member.getHost(), member.getPort());
+        Message message = new Message(Message.Type.Ack, curMember.getSelfEntry());
+        message.send(curMember.getGossipServer(), member.getHost(), member.getPort());
     }
 
     private Message fromDatagramPacketToMessage(DatagramPacket packet) {
@@ -63,21 +72,5 @@ public class PingReceiver extends Thread {
         } catch (IOException | ClassNotFoundException ignored) {
         }
         return null;
-    }
-
-    private void sendMessage(Message message, String host, int port) {
-        // serialize the message
-        try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
-             ObjectOutputStream oout = new ObjectOutputStream(bout)) {
-            oout.writeObject(message);
-            oout.flush();
-
-            // construct the packet
-            byte[] data = bout.toByteArray();
-            DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(host), port);
-            udpServer.send(packet);
-        } catch (IOException e) {
-            // handle error
-        }
     }
 }

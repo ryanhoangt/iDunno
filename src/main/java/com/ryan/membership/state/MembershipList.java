@@ -9,14 +9,14 @@ import java.util.List;
  */
 public class MembershipList implements Iterable<MembershipEntry> {
 
-    private List<MembershipEntry> membershipEntries;
+    private final List<MembershipEntry> membershipEntries;
 
     public MembershipList(MembershipEntry firstMember) {
         this.membershipEntries = new ArrayList<>();
         this.membershipEntries.add(firstMember);
     }
 
-    public boolean addEntry(MembershipEntry newEntry) {
+    public synchronized boolean addEntry(MembershipEntry newEntry) {
         return membershipEntries.add(newEntry);
     }
 
@@ -30,7 +30,7 @@ public class MembershipList implements Iterable<MembershipEntry> {
         throw new UnsupportedOperationException();
     }
 
-    public void remove(MembershipEntry toMember) {
+    public synchronized void remove(MembershipEntry toMember) {
         // TODO: remove the entry from the membership list
         throw new UnsupportedOperationException();
     }
