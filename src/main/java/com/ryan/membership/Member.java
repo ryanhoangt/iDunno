@@ -255,7 +255,7 @@ public class Member {
     private void GossipProtocol() {
         try {
             // start the ping receiver thread
-            new PingReceiver(gossipServer).start();
+            new PingReceiver(gossipServer, selfEntry).start();
             logger.info("UDP Socket opened");
 
             while (true) {

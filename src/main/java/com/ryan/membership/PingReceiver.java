@@ -1,8 +1,11 @@
 package com.ryan.membership;
 
+import com.ryan.membership.state.MembershipEntry;
+
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 /**
  * Thread to receive Ping/Ack and send Ack if needed
@@ -10,9 +13,11 @@ import java.net.DatagramSocket;
 public class PingReceiver extends Thread {
 
     private DatagramSocket udpServer;
+    private MembershipEntry selfEntry;
 
-    public PingReceiver(DatagramSocket udpServer) {
+    public PingReceiver(DatagramSocket udpServer, MembershipEntry selfEntry) {
         this.udpServer = udpServer;
+        this.selfEntry = selfEntry;
     }
 
     @Override
@@ -37,11 +42,18 @@ public class PingReceiver extends Thread {
     private void processMessage(Message message) {
         switch (message.getMessageType()) {
             case Ping:
-                // TODO: Send acks
+                ack(message.getSubject());
+                break;
             case Ack:
                 // TODO: Update states to notify the gossip sending thread that the member is still up
             default:
+                break;
         }
+    }
+
+    private void ack(MembershipEntry member) {
+        Message message = new Message(Message.Type.Ack, selfEntry);
+        sendMessage(message, member.getHost(), member.getPort());
     }
 
     private Message fromDatagramPacketToMessage(DatagramPacket packet) {
@@ -53,4 +65,19 @@ public class PingReceiver extends Thread {
         return null;
     }
 
+    private void sendMessage(Message message, String host, int port) {
+        // serialize the message
+        try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
+             ObjectOutputStream oout = new ObjectOutputStream(bout)) {
+            oout.writeObject(message);
+            oout.flush();
+
+            // construct the packet
+            byte[] data = bout.toByteArray();
+            DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(host), port);
+            udpServer.send(packet);
+        } catch (IOException e) {
+            // handle error
+        }
+    }
 }
