@@ -8,6 +8,7 @@ public class Message implements Serializable {
 
     public enum Type {
         Join,
+        Leave,
         Ping,
         Ack,
         MembershipListRequest,

@@ -188,8 +188,15 @@ public class Member {
     }
 
     private void leaveGroup() {
-        // TODO:
-        throw new UnsupportedOperationException();
+        // do nothing if not joined
+        if (!joined) return;
+
+        logger.info("Leave command received");
+
+        disseminateMessage(new Message(Message.Type.Leave, selfEntry));
+        logger.info("Leave message disseminated");
+
+        // TODO: close resources
     }
 
     private void TCPListener() {
@@ -220,6 +227,11 @@ public class Member {
                     logger.info("Process added to membership list: " + message.getSubject());
                     break;
                 // TODO: handle other types of message
+                case Leave:
+                    logger.info("Received message for process leaving group: " + message.getSubject());
+                    membershipList.remove(message.getSubject());
+                    logger.info("Process removed from membership list: " + message.getSubject());
+                    break;
                 case MembershipListRequest:
                     logger.info("Received request for membership list from: " + message.getSubject());
                     oout.writeObject(this.membershipList);
