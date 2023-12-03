@@ -17,9 +17,11 @@ public class PingReceiver extends Thread {
     public PingReceiver(Member curMember, AtomicBoolean ackSignal) {
         this.curMember = curMember;
         this.ackSignal = ackSignal;
+        this.acker = curMember.getSelfEntry();
     }
 
     public void updateAcker(MembershipEntry newAcker) {
+        if (newAcker == null) return;
         synchronized (acker) {
             this.acker = newAcker;
         }

@@ -1,7 +1,6 @@
 package com.ryan.membership.state;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -46,5 +45,21 @@ public class MembershipList implements Iterable<MembershipEntry>,
 
     public int size() {
         return this.membershipEntries.size();
+    }
+
+    @Override
+    public String toString() {
+        String stringMemberList = "Hostname\tPort\tTimestamp (Join)\n";
+        stringMemberList += "----------------------------------------";
+
+        for (MembershipEntry entry: membershipEntries) {
+            stringMemberList += "\n";
+            if (entry.equals(owner)) {
+                stringMemberList += "Self: ";
+            }
+            stringMemberList += entry.toString();
+        }
+
+        return stringMemberList;
     }
 }

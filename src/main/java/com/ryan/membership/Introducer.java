@@ -32,7 +32,7 @@ public class Introducer {
         this.recentJoins = new LinkedList<>();
 
         // setup logger
-        Handler fh = new FileHandler("/var/log/iDunno/dev/membership/introducer.log");
+        Handler fh = new FileHandler("log/dev/membership/introducer.log");
         fh.setFormatter(new SimpleFormatter());
         logger.setUseParentHandlers(false);
         logger.addHandler(fh);
@@ -54,7 +54,8 @@ public class Introducer {
                     newEntry = (MembershipEntry) oin.readObject();
                     logger.info("Member joining: " + newEntry);
                 } catch (ClassNotFoundException e) {
-                    System.err.println("Error deserializing request: " + e.getMessage());
+//                    System.err.println("Error deserializing request: " + e.getMessage());
+                    e.printStackTrace();
                     continue;
                 }
 

@@ -51,7 +51,7 @@ public class Member {
         this.introducerPort = introducerPort;
 
         // setup logger
-        Handler fh = new FileHandler("/var/log/iDunno/dev/membership/member.log");
+        Handler fh = new FileHandler("log/dev/membership/member.log");
         fh.setFormatter(new SimpleFormatter());
         logger.setUseParentHandlers(false);
         logger.addHandler(fh);
@@ -66,7 +66,7 @@ public class Member {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
             try {
-                System.out.println("MemberProcess$ ");
+                System.out.print("MemberProcess$ ");
                 String command = stdin.readLine();
 
                 switch (command) {
@@ -296,8 +296,11 @@ public class Member {
                 }
                 receiver.updateAcker(successor);
 
-                // send ping messages periodically
-                new PingSender(this, successor, ackSignal).start();
+                if (successor != null) {
+                    logger.info("Successor: " + successor);
+                    new PingSender(this, successor, ackSignal).start();
+                } else
+                    logger.info("No successor found");
 
                 Thread.sleep(PING_INTERVAL_MS);
             }
