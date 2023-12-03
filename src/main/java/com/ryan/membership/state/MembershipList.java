@@ -1,19 +1,26 @@
 package com.ryan.membership.state;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+import java.util.TreeSet;
 
 /**
  * Group membership list.
  */
-public class MembershipList implements Iterable<MembershipEntry> {
+public class MembershipList implements Iterable<MembershipEntry>,
+                                        Serializable {
 
-    private final List<MembershipEntry> membershipEntries;
+    /**
+     * Use {@link java.util.TreeSet} for quicker lookup, insertion, and removal.
+     */
+    private final TreeSet<MembershipEntry> membershipEntries;
+    private MembershipEntry owner;
 
-    public MembershipList(MembershipEntry firstMember) {
-        this.membershipEntries = new ArrayList<>();
-        this.membershipEntries.add(firstMember);
+    public MembershipList(MembershipEntry owner) {
+        this.owner = owner;
+        this.membershipEntries = new TreeSet<>();
+        this.membershipEntries.add(owner);
     }
 
     public synchronized boolean addEntry(MembershipEntry newEntry) {
@@ -26,13 +33,15 @@ public class MembershipList implements Iterable<MembershipEntry> {
     }
 
     public MembershipEntry getSuccessor() {
-        // TODO: get the successor member node in the list, ordered by timestamp joined
-        throw new UnsupportedOperationException();
+        // get the successor member node in the list, ordered by timestamp joined
+        MembershipEntry successor = membershipEntries.higher(owner);
+        if (successor == null)
+            successor = membershipEntries.first();
+        return successor == owner ? null : successor;
     }
 
-    public synchronized void remove(MembershipEntry toMember) {
-        // TODO: remove the entry from the membership list
-        throw new UnsupportedOperationException();
+    public synchronized boolean remove(MembershipEntry entry) {
+        return membershipEntries.remove(entry);
     }
 
     public int size() {

@@ -7,7 +7,8 @@ import java.util.Objects;
 /**
  * Individual member details
  */
-public class MembershipEntry implements Serializable {
+public class MembershipEntry implements Comparable<MembershipEntry>,
+                                        Serializable {
 
     private final String host;
     private final int port;
@@ -29,6 +30,16 @@ public class MembershipEntry implements Serializable {
 
     public Date getTimestamp() {
         return timestamp;
+    }
+
+    @Override
+    public int compareTo(MembershipEntry o) {
+        if (!this.timestamp.equals(o.timestamp))
+            return this.timestamp.compareTo(o.timestamp);
+        else if (!this.host.equals(o.host))
+            return this.host.compareTo(o.host);
+        else
+            return this.port - o.port;
     }
 
     @Override
