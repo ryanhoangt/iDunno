@@ -26,6 +26,11 @@ public class MembershipList implements Iterable<MembershipEntry>,
         return membershipEntries.add(newEntry);
     }
 
+    public synchronized boolean addEntryAsOwner(MembershipEntry newEntry) {
+        this.owner = newEntry;
+        return membershipEntries.add(newEntry);
+    }
+
     @Override
     public Iterator<MembershipEntry> iterator() {
         return membershipEntries.iterator();
@@ -35,7 +40,7 @@ public class MembershipList implements Iterable<MembershipEntry>,
         // get the successor member node in the list, ordered by timestamp joined
         MembershipEntry successor = membershipEntries.higher(owner);
         if (successor == null)
-            successor = membershipEntries.first();
+            successor = membershipEntries.first(); // maintain a ring topology
         return successor == owner ? null : successor;
     }
 

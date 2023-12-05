@@ -62,18 +62,19 @@ public class Introducer {
                 // connect to a running process
                 MembershipEntry member = recentJoins.peek();
                 while (member != null) {
-                    try (Socket probConn = new Socket(member.getHost(), member.getPort());
-                         ObjectInputStream probOin = (ObjectInputStream) probConn.getInputStream();
-                         ObjectOutputStream probOout = (ObjectOutputStream) probConn.getOutputStream()) {
+                    try (Socket probConn = new Socket(member.getHost(), member.getPort())) {
+                        ObjectOutputStream probOout = new ObjectOutputStream(probConn.getOutputStream());
                         logger.info("Found running process: " + member.getHost() + ":" + member.getPort());
                         Message probeAlive = new Message(Message.Type.IntroducerProbeAlive, null);
 
                         probOout.writeObject(probeAlive);
                         probOout.flush();
 
+                        probOout.close(); // manually close the connection
                         break;
                     } catch (Exception ex) {
                         logger.info("Process no longer joined: " + member.getHost() + ":" + member.getPort());
+                        ex.printStackTrace();
                         recentJoins.poll();
                         member = recentJoins.peek();
                     }
@@ -83,6 +84,7 @@ public class Introducer {
                 // write the process info to the response
                 oout.writeObject(member);
                 oout.flush();
+
                 if (member != null)
                     logger.info("Running process sent to newly joined process");
                 else
@@ -90,6 +92,8 @@ public class Introducer {
 
                 // add the new entry to recent join list & close the request
                 recentJoins.add(newEntry);
+                oout.close();
+                oin.close();
                 reqConn.close(); // in turn close in/out stream
             }
         } catch (IOException ex) {

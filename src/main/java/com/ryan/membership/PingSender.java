@@ -2,8 +2,12 @@ package com.ryan.membership;
 
 import com.ryan.membership.state.MembershipEntry;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import static com.ryan.membership.Member.PING_ACK_TIMEOUT_MS;
 
@@ -12,11 +16,11 @@ public class PingSender extends Thread {
     private final MembershipEntry toMember;
     private final AtomicBoolean ackSignal;
 
-    private static final Logger logger = Logger.getLogger("PingSenderLogger");
+    private static final Logger logger = Member.logger;
 
     public PingSender(Member curMember,
                       MembershipEntry toMember,
-                      AtomicBoolean ackSignal) {
+                      AtomicBoolean ackSignal) throws IOException {
         this.curMember = curMember;
         this.toMember = toMember;
         this.ackSignal = ackSignal;

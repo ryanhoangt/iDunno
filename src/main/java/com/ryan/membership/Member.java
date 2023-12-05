@@ -20,7 +20,7 @@ public class Member {
     public static final long PING_ACK_TIMEOUT_MS = 1000;
 
     // Logger
-    private static final Logger logger = Logger.getLogger("MemberLogger");
+    public static final Logger logger = Logger.getLogger("MemberLogger");
 
     // Member and introducer info
     private String host;
@@ -145,8 +145,9 @@ public class Member {
             logger.info("First member of the group");
             this.membershipList = new MembershipList(selfEntry);
         } else {
+            logger.info("Requesting membership list from: " + runningProcess);
             this.membershipList = requestMembershipList(runningProcess);
-            this.membershipList.addEntry(selfEntry); // add self entry to the list
+            this.membershipList.addEntryAsOwner(selfEntry); // add self entry to the list
             logger.info("Received membership list. Currently having: " + membershipList.size() + " member(s)");
         }
 
@@ -171,22 +172,29 @@ public class Member {
 
     // Fetch membership details from a member already in group
     private MembershipList requestMembershipList(MembershipEntry runningProcess) throws IOException, ClassNotFoundException {
-        try (Socket reqConn = new Socket(runningProcess.getHost(), runningProcess.getPort());
-             ObjectInputStream oin = (ObjectInputStream) reqConn.getInputStream();
-             ObjectOutputStream oout = (ObjectOutputStream) reqConn.getOutputStream()) {
+        try (Socket reqConn = new Socket(runningProcess.getHost(), runningProcess.getPort())) {
+            ObjectOutputStream oout = new ObjectOutputStream(reqConn.getOutputStream());
+            ObjectInputStream oin = new ObjectInputStream(reqConn.getInputStream());
+
             Message message = new Message(Message.Type.MembershipListRequest, selfEntry);
             oout.writeObject(message);
             oout.flush();
             logger.info("Sent membership list request to: " + runningProcess);
 
-            return (MembershipList) oin.readObject();
+            MembershipList list = (MembershipList) oin.readObject();
+            oout.close();
+            oin.close();
+            return list;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
         }
     }
 
     private MembershipEntry getRunningProcess() throws IOException, ClassNotFoundException {
-        try (Socket introducerConn = new Socket(introducerHost, introducerPort);
+        try (Socket introducerConn = new Socket(introducerHost, introducerPort)) {
             ObjectOutputStream oout = new ObjectOutputStream(introducerConn.getOutputStream());
-            ObjectInputStream oin = new ObjectInputStream(introducerConn.getInputStream())) {
+            ObjectInputStream oin = new ObjectInputStream(introducerConn.getInputStream());
             logger.info("Connected to introducer: " + introducerConn);
 
             // send self entry to the introducer
@@ -194,7 +202,11 @@ public class Member {
             oout.flush();
             logger.info("Sent message to introducer");
 
-            return (MembershipEntry) oin.readObject();
+            MembershipEntry runningProcess = (MembershipEntry) oin.readObject();
+            oout.close();
+            oin.close();
+
+            return runningProcess;
         } finally {
             logger.info("Connection to introducer closed");
         }
@@ -221,9 +233,10 @@ public class Member {
                 logger.info("TCP connection established from: " + reqConn.toString());
 
                 // spawn a new thread to process the request
-                new Thread(() -> this.processTCPMessage(reqConn));
-            } catch (IOException e) {
+                new Thread(() -> this.processTCPMessage(reqConn)).start();
+            } catch (Exception e) {
                 // do nothing
+                e.printStackTrace();
             }
         }
     }
@@ -306,6 +319,8 @@ public class Member {
             }
         } catch (InterruptedException e) {
             System.out.println("Exit the gossip protocol thread: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             gossipServer.close();
             logger.info("UDP Socket closed");
