@@ -1,6 +1,7 @@
 package com.ryan.membership;
 
 import com.ryan.membership.state.MembershipEntry;
+import com.ryan.message.MembershipMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,8 +9,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -65,7 +64,7 @@ public class Introducer {
                     try (Socket probConn = new Socket(member.getHost(), member.getPort())) {
                         ObjectOutputStream probOout = new ObjectOutputStream(probConn.getOutputStream());
                         logger.info("Found running process: " + member.getHost() + ":" + member.getPort());
-                        Message probeAlive = new Message(Message.Type.IntroducerProbeAlive, null);
+                        MembershipMessage probeAlive = new MembershipMessage(MembershipMessage.Type.IntroducerProbeAlive, null);
 
                         probOout.writeObject(probeAlive);
                         probOout.flush();

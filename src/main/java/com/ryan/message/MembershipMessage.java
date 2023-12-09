@@ -1,4 +1,4 @@
-package com.ryan.membership;
+package com.ryan.message;
 
 import com.ryan.membership.state.MembershipEntry;
 
@@ -10,7 +10,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class Message implements Serializable {
+public class MembershipMessage implements Serializable {
 
     public enum Type {
         Join,
@@ -25,7 +25,7 @@ public class Message implements Serializable {
     private Type messageType;
     private MembershipEntry subject;
 
-    public Message(Type messageType, MembershipEntry subject) {
+    public MembershipMessage(Type messageType, MembershipEntry subject) {
         this.messageType = messageType;
         this.subject = subject;
     }

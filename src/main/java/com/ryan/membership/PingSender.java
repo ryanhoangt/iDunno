@@ -1,13 +1,11 @@
 package com.ryan.membership;
 
 import com.ryan.membership.state.MembershipEntry;
+import com.ryan.message.MembershipMessage;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import static com.ryan.membership.Member.PING_ACK_TIMEOUT_MS;
 
@@ -44,7 +42,7 @@ public class PingSender extends Thread {
                 // ack not received, remove the member from the membership list
                 logger.warning("Ack not received from: " + toMember);
                 logger.warning("Process failure detected: " + toMember);
-                curMember.disseminateMessage(new Message(Message.Type.Crash, toMember));
+                curMember.disseminateMessage(new MembershipMessage(MembershipMessage.Type.Crash, toMember));
 
                 curMember.getMembershipList().remove(toMember);
                 logger.info("Process removed from the membership list: " + toMember);
@@ -57,7 +55,7 @@ public class PingSender extends Thread {
     }
 
     private void ping(MembershipEntry toMember, MembershipEntry sender) {
-        Message pingMsg = new Message(Message.Type.Ping, sender);
+        MembershipMessage pingMsg = new MembershipMessage(MembershipMessage.Type.Ping, sender);
         pingMsg.send(curMember.getGossipServer(), toMember.getHost(), toMember.getPort());
     }
 }

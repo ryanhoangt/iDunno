@@ -4,6 +4,7 @@ import com.ryan.filesystem.Coordinator;
 import com.ryan.filesystem.FileServer;
 import com.ryan.membership.state.MembershipEntry;
 import com.ryan.membership.state.MembershipList;
+import com.ryan.message.MembershipMessage;
 
 import java.io.*;
 import java.net.DatagramSocket;
@@ -97,7 +98,7 @@ public class Member {
                             System.out.println("Not joined.");
                         break;
                     case "put":
-                        // TODO:
+                        fileServer.processFileCommand(command, input[1], input[2]);
                         break;
                     case "get":
                         // TODO:
@@ -136,7 +137,7 @@ public class Member {
     }
 
     // Broadcast the message to all members via TCP
-    public void disseminateMessage(Message message) {
+    public void disseminateMessage(MembershipMessage message) {
         for (MembershipEntry member: this.membershipList) {
             if (member.equals(selfEntry)) continue;
 
@@ -183,7 +184,7 @@ public class Member {
         logger.info("TCP listener started");
 
         // broadcast current join via TCP
-        disseminateMessage(new Message(Message.Type.Join, selfEntry));
+        disseminateMessage(new MembershipMessage(MembershipMessage.Type.Join, selfEntry));
         logger.info("Broadcasted messages - Joined the group");
 
         // start gossip protocol thread, communicating via UDP
@@ -201,7 +202,7 @@ public class Member {
             ObjectOutputStream oout = new ObjectOutputStream(reqConn.getOutputStream());
             ObjectInputStream oin = new ObjectInputStream(reqConn.getInputStream());
 
-            Message message = new Message(Message.Type.MembershipListRequest, selfEntry);
+            MembershipMessage message = new MembershipMessage(MembershipMessage.Type.MembershipListRequest, selfEntry);
             oout.writeObject(message);
             oout.flush();
             logger.info("Sent membership list request to: " + runningProcess);
@@ -244,7 +245,7 @@ public class Member {
         logger.info("Leave command received");
 
         if (notifyOthers) {
-            disseminateMessage(new Message(Message.Type.Leave, selfEntry));
+            disseminateMessage(new MembershipMessage(MembershipMessage.Type.Leave, selfEntry));
             logger.info("Leave message disseminated");
         }
 
@@ -272,7 +273,7 @@ public class Member {
             ObjectInputStream oin = new ObjectInputStream(reqConn.getInputStream());
 
             // read the message
-            Message message = (Message) oin.readObject();
+            MembershipMessage message = (MembershipMessage) oin.readObject();
             switch (message.getMessageType()) {
                 case Join:
                     logger.info("Received message for process joining group: " + message.getSubject());

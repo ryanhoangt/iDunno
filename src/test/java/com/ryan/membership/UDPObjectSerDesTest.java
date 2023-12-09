@@ -1,17 +1,17 @@
 package com.ryan.membership;
 
 import com.ryan.membership.state.MembershipEntry;
+import com.ryan.message.MembershipMessage;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
-import java.util.Arrays;
 import java.util.Date;
 
 public class UDPObjectSerDesTest {
 
     @Test
     public void testSerializeMessageObject_UsingBuiltInMethod() throws IOException, ClassNotFoundException {
-        Message message = new Message(Message.Type.Join,
+        MembershipMessage message = new MembershipMessage(MembershipMessage.Type.Join,
                 new MembershipEntry("localhost", 2999, new Date()));
 
         // serialize
@@ -24,7 +24,7 @@ public class UDPObjectSerDesTest {
 
         // deserialize
         ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(serializedMsg));
-        Message deserializedMsg = (Message) oin.readObject();
+        MembershipMessage deserializedMsg = (MembershipMessage) oin.readObject();
         oin.close();
 
         assert message.getMessageType().equals(deserializedMsg.getMessageType());

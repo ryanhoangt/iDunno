@@ -1,6 +1,7 @@
 package com.ryan.membership;
 
 import com.ryan.membership.state.MembershipEntry;
+import com.ryan.message.MembershipMessage;
 
 import java.io.*;
 import java.net.DatagramPacket;
@@ -36,7 +37,7 @@ public class PingReceiver extends Thread {
                 curMember.getGossipServer().receive(packet);
 
                 // deserialize and process the packet
-                Message message = fromDatagramPacketToMessage(packet);
+                MembershipMessage message = fromDatagramPacketToMessage(packet);
                 if (message == null) continue;
 
                 processMessage(message);
@@ -46,7 +47,7 @@ public class PingReceiver extends Thread {
         }
     }
 
-    private void processMessage(Message message) {
+    private void processMessage(MembershipMessage message) {
         switch (message.getMessageType()) {
             case Ping:
                 ack(message.getSubject());
@@ -63,14 +64,14 @@ public class PingReceiver extends Thread {
     }
 
     private void ack(MembershipEntry member) {
-        Message message = new Message(Message.Type.Ack, curMember.getSelfEntry());
+        MembershipMessage message = new MembershipMessage(MembershipMessage.Type.Ack, curMember.getSelfEntry());
         message.send(curMember.getGossipServer(), member.getHost(), member.getPort());
     }
 
-    private Message fromDatagramPacketToMessage(DatagramPacket packet) {
+    private MembershipMessage fromDatagramPacketToMessage(DatagramPacket packet) {
         byte[] data = packet.getData();
         try (ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            return (Message) oin.readObject();
+            return (MembershipMessage) oin.readObject();
         } catch (IOException | ClassNotFoundException ignored) {
         }
         return null;
