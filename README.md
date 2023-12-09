@@ -22,3 +22,13 @@
 - `ls <sdfsfilename>` - list all machine (VM) addresses where this file is currently being stored
 - `store` - list all files currently being stored at this machine (VM)
 - `get-versions <sdfsfilename> <num-versions> <localfilename>` - get all the last `num-version` versions of `sdfsfilename` and store them in `localfilename`
+
+## VM IPs
+| VM           | Private IP   | Public IP     |
+|--------------|--------------|---------------|
+| iDunno-vm-1  | 10.0.0.4     | 20.5.240.52   |
+| iDunno-vm-2  | 10.0.0.5     |               |
+| iDunno-vm-3  | 10.0.0.6     |               |
+| iDunno-vm-4  | 10.0.0.8     |               |
+
+
