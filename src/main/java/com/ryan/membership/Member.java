@@ -1,5 +1,7 @@
 package com.ryan.membership;
 
+import com.ryan.filesystem.Coordinator;
+import com.ryan.filesystem.FileServer;
 import com.ryan.membership.state.MembershipEntry;
 import com.ryan.membership.state.MembershipList;
 
@@ -41,6 +43,10 @@ public class Member {
     private MembershipList membershipList;
     private MembershipEntry selfEntry;
 
+    // File system service
+    private FileServer fileServer; // local file server
+    private Coordinator coordinator; // reference to the coordinator
+
     // Other
     private boolean joined;
 
@@ -67,7 +73,8 @@ public class Member {
         while (true) {
             try {
                 System.out.print("MemberProcess$ ");
-                String command = stdin.readLine();
+                String[] input = stdin.readLine().split(" ");
+                String command = input[0];
 
                 switch (command) {
                     case "join":
@@ -88,6 +95,24 @@ public class Member {
                             System.out.println(selfEntry);
                         else
                             System.out.println("Not joined.");
+                        break;
+                    case "put":
+                        // TODO:
+                        break;
+                    case "get":
+                        // TODO:
+                        break;
+                    case "delete":
+                        // TODO:
+                        break;
+                    case "ls":
+                        // TODO:
+                        break;
+                    case "store":
+                        // TODO:
+                        break;
+                    case "get-versions":
+                        // TODO:
                         break;
                     default:
                         System.out.println("Unrecognized command, type 'join', 'leave', 'list_mem', or 'list_self'");
