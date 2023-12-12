@@ -73,7 +73,7 @@ public class Introducer {
                         break;
                     } catch (Exception ex) {
                         logger.info("Process no longer joined: " + member.getHost() + ":" + member.getPort());
-                        ex.printStackTrace();
+//                        ex.printStackTrace();
                         recentJoins.poll();
                         member = recentJoins.peek();
                     }

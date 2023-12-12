@@ -30,7 +30,7 @@ public class PingReceiver extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        while (!this.curMember.getEnded().get()) {
             try {
                 byte[] buffer = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

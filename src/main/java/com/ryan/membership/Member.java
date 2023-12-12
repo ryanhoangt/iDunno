@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.FileHandler;
@@ -50,12 +51,14 @@ public class Member {
 
     // Other
     private boolean joined;
+    private AtomicBoolean ended;
 
     public Member(String host, int port, String introducerHost, int introducerPort) throws IOException {
         this.host = host;
         this.port = port;
         this.introducerHost = introducerHost;
         this.introducerPort = introducerPort;
+        this.ended = new AtomicBoolean(false);
 
         // setup logger
         Handler fh = new FileHandler("log/dev/membership/member.log");
@@ -67,7 +70,6 @@ public class Member {
     /**
      * Process command line inputs
      */
-
     public void start() throws ClassNotFoundException {
         logger.info("Member process started");
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
@@ -136,6 +138,10 @@ public class Member {
         return gossipServer;
     }
 
+    public AtomicBoolean getEnded() {
+        return ended;
+    }
+
     // Broadcast the message to all members via TCP
     public void disseminateMessage(MembershipMessage message) {
         for (MembershipEntry member: this.membershipList) {
@@ -158,6 +164,7 @@ public class Member {
         if (joined) return;
 
         // initialize self-identity
+        this.ended.set(false);
         this.timestamp = new Date();
         this.selfEntry = new MembershipEntry(host, port, timestamp);
         logger.info("Created new entry: " + selfEntry);
@@ -249,11 +256,27 @@ public class Member {
             logger.info("Leave message disseminated");
         }
 
-        // TODO: close resources
+        ended.set(true);
+
+        try {
+            tcpServer.close();
+            logger.info("TCP socket closed");
+            tcpListener.join();
+            logger.info("TCP listener stopped");
+            gossipProtocolThread.join();
+            logger.info("Gossip protocol thread stopped");
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        this.selfEntry = null;
+        this.membershipList = null;
+
+        joined = false;
     }
 
     private void TCPListener() {
-        while (true) {
+        while (!ended.get()) {
             try {
                 Socket reqConn = tcpServer.accept();
                 logger.info("TCP connection established from: " + reqConn.toString());
@@ -261,7 +284,9 @@ public class Member {
                 // spawn a new thread to process the request
                 new Thread(() -> this.processTCPMessage(reqConn)).start();
             } catch (Exception e) {
+                if (e instanceof SocketException) continue;
                 // do nothing
+
                 e.printStackTrace();
             }
         }
@@ -327,7 +352,7 @@ public class Member {
             receiver.start();
             logger.info("UDP Socket opened");
 
-            while (true) {
+            while (!ended.get()) {
                 // get the successor member from membership list
                 MembershipEntry successor;
                 synchronized (membershipList) {
