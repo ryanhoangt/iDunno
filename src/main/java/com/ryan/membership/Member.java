@@ -47,6 +47,7 @@ public class Member {
 
     // File system service
     private FileServer fileServer; // local file server
+    // TODO: update coordinator info in membership list when coordinator changes
     private Coordinator coordinator; // reference to the coordinator
 
     // Other

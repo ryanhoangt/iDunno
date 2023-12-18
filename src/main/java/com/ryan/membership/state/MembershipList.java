@@ -15,6 +15,7 @@ public class MembershipList implements Iterable<MembershipEntry>,
      */
     private final TreeSet<MembershipEntry> membershipEntries;
     private MembershipEntry owner;
+    private MembershipEntry coordinator; // for passing to other nodes
 
     public MembershipList(MembershipEntry owner) {
         this.owner = owner;
@@ -29,6 +30,10 @@ public class MembershipList implements Iterable<MembershipEntry>,
     public synchronized boolean addEntryAsOwner(MembershipEntry newEntry) {
         this.owner = newEntry;
         return membershipEntries.add(newEntry);
+    }
+
+    public MembershipEntry getCoordinator() {
+        return coordinator;
     }
 
     @Override

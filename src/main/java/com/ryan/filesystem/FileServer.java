@@ -1,14 +1,22 @@
 package com.ryan.filesystem;
 
+import com.ryan.membership.state.MembershipEntry;
+import com.ryan.membership.state.MembershipList;
 import com.ryan.message.FileMessage;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 
 public class FileServer {
     private String baseDirectoryStr;
+    private final MembershipList membershipList;
 
-    public FileServer(String dirName) {
+    public FileServer(String dirName, MembershipList membershipList) {
         this.baseDirectoryStr = System.getProperty("user.home") + "/Desktop/SDFS/" + dirName + "/";
+        this.membershipList = membershipList;
     }
 
     /**
@@ -37,7 +45,26 @@ public class FileServer {
     }
 
     private FileMessage sendToCoordinator(FileMessage message) {
-        // TODO:
-        return null;
+        // get the coordinator from the membership list
+        MembershipEntry coordinator = membershipList.getCoordinator();
+
+        try (Socket coordinatorSocket = new Socket(coordinator.getHost(), coordinator.getPort())) {
+            ObjectOutputStream oout = new ObjectOutputStream(coordinatorSocket.getOutputStream());
+            ObjectInputStream oin = new ObjectInputStream(coordinatorSocket.getInputStream());
+
+            oout.writeObject(message);
+            oout.flush();
+
+            FileMessage response = (FileMessage) oin.readObject();
+
+            oout.close();
+            oin.close();
+
+            return response;
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error sending message to coordinator:");
+            e.printStackTrace();
+            return null;
+        }
     }
 }
