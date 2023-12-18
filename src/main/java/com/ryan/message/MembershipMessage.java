@@ -38,7 +38,7 @@ public class MembershipMessage implements Serializable {
         return subject;
     }
 
-    public void send(DatagramSocket udpServer, String host, int port) {
+    public void udpSend(DatagramSocket udpServer, String host, int port) {
         // serialize the message
         try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
              ObjectOutputStream oout = new ObjectOutputStream(bout)) {

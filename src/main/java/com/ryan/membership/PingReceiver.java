@@ -65,7 +65,7 @@ public class PingReceiver extends Thread {
 
     private void ack(MembershipEntry member) {
         MembershipMessage message = new MembershipMessage(MembershipMessage.Type.Ack, curMember.getSelfEntry());
-        message.send(curMember.getGossipServer(), member.getHost(), member.getPort());
+        message.udpSend(curMember.getGossipServer(), member.getHost(), member.getPort());
     }
 
     private MembershipMessage fromDatagramPacketToMessage(DatagramPacket packet) {

@@ -56,6 +56,6 @@ public class PingSender extends Thread {
 
     private void ping(MembershipEntry toMember, MembershipEntry sender) {
         MembershipMessage pingMsg = new MembershipMessage(MembershipMessage.Type.Ping, sender);
-        pingMsg.send(curMember.getGossipServer(), toMember.getHost(), toMember.getPort());
+        pingMsg.udpSend(curMember.getGossipServer(), toMember.getHost(), toMember.getPort());
     }
 }
